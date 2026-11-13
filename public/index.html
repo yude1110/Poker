@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050811">
+  <title>HOLO Hold'em</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/chakra-petch-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <canvas id="bg" aria-hidden="true"></canvas>
+
+  <!-- 大廳 -->
+  <main id="lobby" class="screen">
+    <section class="lobby-hero">
+      <p class="eyebrow"><i class="live-dot"></i>多人即時連線 · TEXAS HOLD'EM</p>
+      <h1 class="logo">HOLO<span>HOLD'EM</span></h1>
+      <p class="tagline">開一間房、丟連結給朋友，打開瀏覽器就能同桌開打。不用安裝，手機電腦都能玩。</p>
+      <div class="hero-cards" id="hero-cards" aria-hidden="true"></div>
+    </section>
+
+    <section class="lobby-card" aria-label="進入牌桌">
+      <label class="field">
+        <span>你的暱稱</span>
+        <input id="name" maxlength="14" autocomplete="nickname" placeholder="最多 14 字" spellcheck="false">
+      </label>
+
+      <div class="tabs" role="tablist">
+        <button id="tab-create" role="tab" class="tab is-active" aria-selected="true" type="button">開新房間</button>
+        <button id="tab-join" role="tab" class="tab" aria-selected="false" type="button">輸入房號</button>
+        <i class="tab-ink"></i>
+      </div>
+
+      <form id="form-create" class="pane">
+        <div class="option">
+          <span>盲注</span>
+          <div class="seg" data-option="blinds">
+            <button type="button" data-value="1/2">1/2</button>
+            <button type="button" data-value="5/10" class="is-on">5/10</button>
+            <button type="button" data-value="25/50">25/50</button>
+            <button type="button" data-value="100/200">100/200</button>
+          </div>
+        </div>
+        <div class="option">
+          <span>起始籌碼</span>
+          <div class="seg" data-option="depth">
+            <button type="button" data-value="50">50 BB</button>
+            <button type="button" data-value="100" class="is-on">100 BB</button>
+            <button type="button" data-value="200">200 BB</button>
+          </div>
+        </div>
+        <div class="option">
+          <span>行動時間</span>
+          <div class="seg" data-option="turn">
+            <button type="button" data-value="15">15 秒</button>
+            <button type="button" data-value="25" class="is-on">25 秒</button>
+            <button type="button" data-value="45">45 秒</button>
+          </div>
+        </div>
+        <div class="option">
+          <span>座位數</span>
+          <div class="seg" data-option="seats">
+            <button type="button" data-value="2">2</button>
+            <button type="button" data-value="4">4</button>
+            <button type="button" data-value="6" class="is-on">6</button>
+            <button type="button" data-value="9">9</button>
+          </div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="allow-rebuy" checked>
+          <i></i>
+          <span>允許輸光後重新買入</span>
+        </label>
+        <button class="btn btn-primary btn-wide" type="submit">建立房間</button>
+      </form>
+
+      <form id="form-join" class="pane" hidden>
+        <label class="field">
+          <span>房號</span>
+          <input id="code" class="code-input" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCDE">
+        </label>
+        <button class="btn btn-primary btn-wide" type="submit">加入牌桌</button>
+      </form>
+    </section>
+  </main>
+
+  <!-- 牌桌 -->
+  <section id="game" class="screen" hidden>
+    <header class="hud">
+      <div class="hud-brand">HOLO</div>
+      <button id="invite" class="room-chip" type="button" title="複製邀請連結">
+        <small>房號</small><b id="room-code">-----</b><em>複製邀請</em>
+      </button>
+      <div class="hud-stats">
+        <span><small>盲注</small><b id="hud-blinds">-</b></span>
+        <span><small>手數</small><b id="hud-hand">0</b></span>
+        <span class="hud-ping"><i id="ping-dot"></i><b id="hud-ping">--</b></span>
+      </div>
+      <div class="hud-actions">
+        <button id="btn-sound" class="icon-btn" type="button" aria-label="音效" title="音效"></button>
+        <button id="btn-panel" class="icon-btn" type="button" aria-label="紀錄與聊天" title="紀錄與聊天"></button>
+        <button id="btn-leave" class="icon-btn" type="button" aria-label="離開牌桌" title="離開牌桌"></button>
+      </div>
+    </header>
+
+    <div class="game-body">
+      <div id="stage">
+        <div class="table">
+          <div class="rim"></div>
+          <div class="felt"><i class="sweep"></i></div>
+        </div>
+
+        <div id="center">
+          <div id="pot" class="pot" hidden>
+            <small>底池</small><b id="pot-amount">0</b>
+            <div id="side-pots" class="side-pots"></div>
+          </div>
+          <div id="board" class="board"></div>
+          <div id="banner" class="banner" hidden></div>
+        </div>
+
+        <div id="waiting" class="waiting" hidden>
+          <small>房號</small>
+          <strong id="waiting-code"></strong>
+          <p id="waiting-text"></p>
+          <div class="waiting-actions">
+            <button id="waiting-invite" class="btn btn-ghost" type="button">複製邀請連結</button>
+            <button id="btn-start" class="btn btn-primary" type="button">開始牌局</button>
+          </div>
+        </div>
+
+        <div id="seats"></div>
+        <div id="dealer" class="dealer-chip" hidden>D</div>
+      </div>
+
+      <aside id="panel" class="panel">
+        <div class="tabs panel-tabs" role="tablist">
+          <button id="tab-feed" class="tab is-active" role="tab" aria-selected="true" type="button">紀錄</button>
+          <button id="tab-rank" class="tab" role="tab" aria-selected="false" type="button">排行</button>
+          <i class="tab-ink"></i>
+        </div>
+        <div id="feed" class="feed" aria-live="polite"></div>
+        <ol id="rank" class="rank" hidden></ol>
+        <form id="chat-form" class="chat-form">
+          <input id="chat-input" maxlength="120" placeholder="說點什麼…" autocomplete="off" aria-label="聊天訊息">
+          <button class="btn btn-ghost" type="submit">送出</button>
+        </form>
+      </aside>
+    </div>
+
+    <footer id="dock">
+      <div class="dock-left">
+        <div id="hand-name" class="hand-name"></div>
+        <div id="dock-note" class="dock-note"></div>
+        <div class="dock-secondary">
+          <button id="btn-sit" class="btn btn-mini" type="button"></button>
+          <button id="btn-rebuy" class="btn btn-mini btn-accent" type="button" hidden></button>
+          <button id="btn-show" class="btn btn-mini" type="button" hidden>亮牌</button>
+        </div>
+      </div>
+
+      <div id="pre-actions" class="pre-actions" hidden>
+        <button class="pre" data-pre="checkfold" type="button">過牌 / 棄牌</button>
+        <button class="pre" data-pre="callany" type="button">跟任何注</button>
+      </div>
+
+      <div id="actions" class="actions" hidden>
+        <div id="raise-box" class="raise-box">
+          <div class="presets">
+            <button type="button" data-frac="0.5">½ 池</button>
+            <button type="button" data-frac="0.75">¾ 池</button>
+            <button type="button" data-frac="1">滿池</button>
+            <button type="button" data-frac="all">全下</button>
+          </div>
+          <div class="slider-row">
+            <input id="raise-slider" type="range" aria-label="加注金額">
+            <input id="raise-input" type="number" inputmode="numeric" aria-label="加注金額數字">
+          </div>
+        </div>
+        <div class="act-buttons">
+          <button id="btn-fold" class="btn btn-fold" type="button"><kbd>F</kbd>棄牌</button>
+          <button id="btn-call" class="btn btn-call" type="button"><kbd>C</kbd><span></span></button>
+          <button id="btn-raise" class="btn btn-raise" type="button"><kbd>R</kbd><span></span></button>
+        </div>
+      </div>
+    </footer>
+
+    <div id="conn-banner" class="conn-banner" hidden></div>
+  </section>
+
+  <div id="fx" aria-hidden="true"></div>
+  <div id="toasts" aria-live="assertive"></div>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

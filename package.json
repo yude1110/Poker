@@ -1,0 +1,19 @@
+{
+  "name": "holo-holdem",
+  "version": "1.0.0",
+  "description": "可線上連線的德州撲克：Node.js 權威伺服器 + 科技風瀏覽器介面",
+  "private": true,
+  "license": "MIT",
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "share": "node scripts/share.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "ws": "^8.22.1"
+  }
+}
